@@ -1,5 +1,5 @@
 1) What is wrong with the component you chose?
-  - I identified a small user experience problem in the mobile navigation component, where the user, when clicking on the hamburger menu, the menu opens but at the top of the page changing its initial position, making it difficult to close the menu and there is also no other way to for closing it.
+  - I identified a small user experience problem in the mobile navigation component, where the user, when clicking on the hamburger menu, the menu opens but at the top of the page changing its initial position, making it difficult to close the menu and there is also no other way for closing it.
 
 2) How will you improve it?
 -I would place the menu when opened keeping its position just below the close button.
