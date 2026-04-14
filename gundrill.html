@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gundrill Industrial Calculator</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #121212;
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    width: 350px;
+}
+
+h2 {
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    background: #2c2c2c;
+    border: none;
+    color: white;
+}
+
+button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    background: #4CAF50;
+    border: none;
+    font-size: 16px;
+    color: white;
+    cursor: pointer;
+}
+
+.result {
+    margin-top: 20px;
+    padding: 10px;
+    background: #2c2c2c;
+    border-radius: 5px;
+}
+
+.warning {
+    color: orange;
+    margin-top: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Gundrill Calculator</h2>
+
+    <label>Material</label>
+    <select id="material">
+        <option value="inconel">Inconel 718</option>
+        <option value="monel">Monel K500</option>
+        <option value="steel">Alloy Steel</option>
+        <option value="stainless">Stainless 316L</option>
+        <option value="aluminum">Aluminum</option>
+        <option value="copper">Copper</option>
+        <option value="plastic">Plastic</option>
+    </select>
+
+    <label>Diameter (mm)</label>
+    <input type="number" id="diameter" placeholder="Ex: 6.35">
+
+    <label>Depth (mm)</label>
+    <input type="number" id="depth" placeholder="Optional">
+
+    <label>Mode</label>
+    <select id="mode">
+        <option value="safe">Safe</option>
+        <option value="prod">Production</option>
+    </select>
+
+    <button onclick="calculate()">Calculate</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+function getFz(material, d) {
+    if (material === "inconel") return d < 5 ? 0.004 : d < 10 ? 0.008 : 0.018;
+    if (material === "monel") return d < 5 ? 0.005 : d < 10 ? 0.01 : 0.014;
+    if (material === "copper") return d < 5 ? 0.008 : d < 10 ? 0.015 : 0.025;
+    if (material === "aluminum") return d < 5 ? 0.01 : d < 10 ? 0.02 : 0.03;
+    return d < 5 ? 0.006 : d < 10 ? 0.012 : 0.02;
+}
+
+function getVc(material) {
+    switch(material) {
+        case "inconel": return 25;
+        case "monel": return 22;
+        case "steel": return 60;
+        case "stainless": return 50;
+        case "aluminum": return 120;
+        case "copper": return 90;
+        case "plastic": return 80;
+    }
+}
+
+function calculate() {
+    let material = document.getElementById("material").value;
+    let d = parseFloat(document.getElementById("diameter").value);
+    let depth = parseFloat(document.getElementById("depth").value);
+    let mode = document.getElementById("mode").value;
+
+    if (!d) {
+        alert("Insert diameter!");
+        return;
+    }
+
+    let Vc = getVc(material);
+    let fz = getFz(material, d);
+
+    // Mode adjustment
+    if (mode === "safe") {
+        Vc *= 0.9;
+        fz *= 0.9;
+    }
+
+    // L/D correction
+    let warnings = [];
+    if (depth) {
+        let LD = depth / d;
+
+        if (LD > 50) {
+            Vc *= 0.85;
+            fz *= 0.9;
+            warnings.push("High L/D → reduce parameters");
+        }
+
+        if (LD > 100) {
+            Vc *= 0.8;
+            fz *= 0.85;
+            warnings.push("Very deep hole → check alignment & pressure");
+        }
+    }
+
+    let rpm = (Vc * 1000) / (Math.PI * d);
+    let feed = rpm * fz;
+
+    // Smart warnings
+    if (material === "inconel" && fz < 0.006)
+        warnings.push("Low feed → risk of tip breakage");
+
+    if (material === "monel" && fz < 0.009)
+        warnings.push("Low feed → work hardening risk");
+
+    if (material === "copper")
+        warnings.push("Sticky material → watch chip evacuation");
+
+    document.getElementById("result").innerHTML = `
+        <b>RPM:</b> ${rpm.toFixed(0)}<br>
+        <b>Feed:</b> ${feed.toFixed(2)} mm/min
+        <div>${warnings.map(w => `<div class="warning">⚠ ${w}</div>`).join("")}</div>
+    `;
+}
+</script>
+
+</body>
+</html>
